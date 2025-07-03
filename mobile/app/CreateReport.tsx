@@ -8,6 +8,8 @@ import { Asset } from "expo-asset";
 import { FlatList } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RouteProp, useRoute } from "@react-navigation/native";
+import { useNavigation } from '@react-navigation/native';
+
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const CELL_WIDTH = 100;
@@ -47,6 +49,7 @@ const CreateReportPage = () => {
     const route = useRoute<CreateReportPageRouteProp>();
     const reportId = route.params?.reportId;
     const fallbackSelected = { row: jsonData.length - 1, col: jsonHeader.length - 1 };
+    const navigation = useNavigation();
 
     const handlePickExcel = async (): Promise<void> => {
         const result = await DocumentPicker.getDocumentAsync({
@@ -346,7 +349,7 @@ const CreateReportPage = () => {
 
     useEffect(() => {
         if (users.length > 0 && form.userAccess.length > 0) {
-            setForm((prev) => ({ ...prev })) // trigger re-render
+            setForm((prev: typeof form) => ({ ...prev })) // trigger re-render
         }
     }, [users])
 
@@ -354,17 +357,22 @@ const CreateReportPage = () => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 64 }}>
             <View style={styles.header}>
-
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => (navigation as any).navigate("HomePage")}
+                >
+                    <Text style={styles.backButtonText}>← Back</Text>
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Report Detail</Text>
             </View>
 
             <View style={styles.formWrap}>
                 <TextInput
                     placeholder="Report Name"
-                    placeholderTextColor="#aaa"  
-                    value={form.reportName}      
-                    onChangeText={(text) => updateForm("reportName", text)}  
-                    style={styles.inputUnderline}  
+                    placeholderTextColor="#aaa"
+                    value={form.reportName}
+                    onChangeText={(text) => updateForm("reportName", text)}
+                    style={styles.inputUnderline}
                 />
 
                 {Object.keys(form).map((key) => {
@@ -727,10 +735,12 @@ const styles = StyleSheet.create({
     backButton: {
         marginRight: 16,
         padding: 8,
+        backgroundColor: '#1B3935',  
+        borderRadius: 8,
     },
     backButtonText: {
-        fontSize: 24,
-        color: '#E2E4D7',
+        fontSize: 18,
+        color: '#E2E4D7',  
         fontWeight: 'bold',
     },
     headerTitle: {
@@ -759,6 +769,7 @@ const styles = StyleSheet.create({
     },
 
     // === Buttons ===
+    
     importButton: {
         backgroundColor: "#e0e0e0",
         padding: 12,

@@ -79,3 +79,4 @@ server {
     add_header X-Content-Type-Options "nosniff";
     add_header Referrer-Policy "no-referrer-when-downgrade";
 }
+

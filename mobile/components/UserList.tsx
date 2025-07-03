@@ -105,6 +105,9 @@ const styles = StyleSheet.create({
     },
     cardRow: {
         paddingHorizontal: 16,
+        flexWrap: 'nowrap',
+        justifyContent: 'flex-start',
+        width: 'auto',    
     },
     cardWrapper: {
         width: cardWidth,

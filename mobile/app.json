@@ -2,7 +2,7 @@
   "expo": {
     "name": "finsolvz",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "1.0.3", 
     "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/image/LogoHorizontal.png",
@@ -24,7 +24,7 @@
       "appVersionSource": "project"
     },
     "android": {
-      "versionCode": 1,
+      "versionCode": 4,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/image/logoFinsolvz.png",
