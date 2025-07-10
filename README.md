@@ -1,140 +1,198 @@
+# OVERVIEW
 Finsolvz is a financial reporting platform built with React Native (Expo) for Android frontend and Express.js + MongoDB for backend. It helps companies submit and manage their financial reports (Balance Sheet, Profit & Loss, Revenue, etc.) through a simple, intuitive interface.
 
-📲 Tech Stack
+<br/>
 
-Frontend (Mobile): React Native (Expo), TypeScript
-Backend: Node.js, Express.js
-Database: MongoDB
-State Management: React hooks
-API Client: Axios
-Others: i18next (internationalization), AsyncStorage
+## Tech Stack
 
------------------------------
+|               | Tools & Libraries                      |
+|---------------|------------------------------------------|
+| Frontend      | React Native (Expo), TypeScript         |
+| Backend       | Node.js, Express.js                     |
+| Database      | MongoDB                                 |
+| State Mgmt    | React Hooks                             |
+| API Client    | Axios                                   |
+| Others        | i18next (internationalization), AsyncStorage |
 
-🔗 Important Links
-Spreadsheet Template: [TBA](https://docs.google.com/spreadsheets/d/1JQo7bi6PO8OXAym97Gp9xAVbDZm-L-I1/edit?usp=drive_link&ouid=102522500447593840388&rtpof=true&sd=true)
-.env: [TBA](https://drive.google.com/drive/u/5/folders/1WcZEPBtt_gYJztOoaan6Hn5ri1Q5h4xI)
+<br/>
+<br/>
 
------------------------------
+## Run Project
 
-🧪 How to Run This Project
-Backend (Express.js)
+### Backend (Express.js)
 
+```
 cd backend
 npm install
 npm run dev
+```
+<br/>
 
-Mobile App (React Native with Expo)
+### Mobile App (React Native with Expo)
+
+```
 cd mobile
 npm install
 npx expo start
+```
+<br/>
+<br/>
 
-Make sure .env contains the following:
+## App Flow
 
-EXPO_PUBLIC_API_URL=http://<your-local-ip>:<port>
+*Login → Home → Upload Excel → Parse + Save → Show Table → View Detail / Compare Report*
 
------------------------------
+#### User Roles
 
-**App Flow (Simplified)**
-Login → Home → Upload Excel → Parse + Save → Show Table → View Detail / Compare Report
+| Role         | Permissions                                               |
+|--------------|-----------------------------------------------------------|
+| SUPER_ADMIN  | Full access to users, companies, and reports              |
+| ADMIN        | Create/edit own reports, view company-related data        |
+| CLIENT       | View reports assigned to their company only               |
 
-**User Roles**
-SUPER_ADMIN: Full access to users, companies, and reports.
-ADMIN: Create/edit own reports, view company-related data.
-CLIENT: View reports assigned to their company only.
+<br/>
 
------------------------------
+## Routes
 
-** API Routes Summary**
+#### Auth
 
-**Auth (6 routes)**
-POST /login
-GET /loginUser
-POST /logout
-POST /forgot-password
-POST /reset-password
-PATCH /change-password
+| Method | Endpoint             | Description               |
+|--------|----------------------|---------------------------|
+| POST   | /login               | User login                |
+| GET    | /loginUser           | Get current user          |
+| POST   | /logout              | Logout user               |
+| POST   | /forgot-password     | Send reset email          |
+| POST   | /reset-password      | Reset password with token |
+| PATCH  | /change-password     | Change user password      |
 
-**Users (7 routes)**
-POST /users
-GET /users
-GET /users/:id
-GET /users/byName/:name
-PUT /updateUser/:id
-PUT /updateRole
-DELETE /users/:id
+<br/>
+<br/>
 
-**Companies (7 routes)**
-POST /company
-GET /company
-GET /company/:id
-GET /company/:name
-PUT /company/:id
-DELETE /company/:id
-GET /user/companies
+#### Users
 
-**Reports (11 routes)**
-POST /reports
-PUT /reports/:id
-DELETE /reports/:id
-GET /reports
-GET /reports/:id
-GET /reports/name/:name
-GET /reports/company/:companyId
-POST /reports/companies
-GET /reports/reportType/:reportTypeId
-GET /reports/userAccess/:userId
-GET /reports/createdBy/:userId
+| Method | Endpoint                  | Description            |
+|--------|---------------------------|------------------------|
+| POST   | /users                    | Register new user      |
+| GET    | /users                    | Get all users          |
+| GET    | /users/:id                | Get user by ID         |
+| GET    | /users/byName/:name       | Get user by name/email |
+| PUT    | /updateUser/:id           | Update user info       |
+| PUT    | /updateRole               | Update user role       |
+| DELETE | /users/:id                | Delete user            |
 
-**Report Types (6 routes)**
-GET /reportTypes
-GET /reportTypes/:id
-GET /reportTypes/:name
-POST /reportTypes
-PUT /reportTypes/:id
-DELETE /reportTypes/:id
+<br/>
+<br/>
 
-✅ Total: 37 API Routes
+#### Companies
 
-**How to Increase Android Version (Expo Eject)**
+| Method | Endpoint               | Description              |
+|--------|------------------------|--------------------------|
+| POST   | /company               | Create new company       |
+| GET    | /company               | Get all companies        |
+| GET    | /company/:id           | Get company by ID        |
+| GET    | /company/:name         | Get company by name      |
+| PUT    | /company/:id           | Update company           |
+| DELETE | /company/:id           | Delete company           |
+| GET    | /user/companies        | Get companies by user    |
+
+<br/>
+<br/>
+
+#### Reports
+
+| Method | Endpoint                          | Description                     |
+|--------|-----------------------------------|---------------------------------|
+| POST   | /reports                          | Create report                   |
+| PUT    | /reports/:id                      | Update report                   |
+| DELETE | /reports/:id                      | Delete report                   |
+| GET    | /reports                          | Get all reports                 |
+| GET    | /reports/:id                      | Get report by ID                |
+| GET    | /reports/name/:name               | Get report by name              |
+| GET    | /reports/company/:companyId       | Get reports by company          |
+| POST   | /reports/companies                | Get reports by multiple companies |
+| GET    | /reports/reportType/:reportTypeId | Get reports by type             |
+| GET    | /reports/userAccess/:userId       | Get reports accessible to user  |
+| GET    | /reports/createdBy/:userId        | Get reports created by user     |
+
+<br/>
+<br/>
+
+#### Report Type
+| Method | Endpoint            | Description          |
+|--------|---------------------|----------------------|
+| GET    | /reportTypes        | Get all report types |
+| GET    | /reportTypes/:id    | Get type by ID       |
+| GET    | /reportTypes/:name  | Get type by name     |
+| POST   | /reportTypes        | Create report type   |
+| PUT    | /reportTypes/:id    | Update report type   |
+| DELETE | /reportTypes/:id    | Delete report type   |
+
+<br/>
+<br/>
+
+### ✅ Total: 37 API Routes
+
+<br/>
+<br/>
+
+
+## How to Increase Android Version (Expo Eject)
 
 To update your Android version code and version name (required for Play Store uploads), you can do it manually via Android Studio or using CLI.
 
-**Option 1: Using Android Studio**
+#### Option 1: Using Android Studio
 
-Open project in Android Studio.
+> - Open project in Android Studio.  
+>   
+> - Navigate to android/app/build.gradle  
+>   
+> - Look for this section:  
+>   
+> ```
+> defaultConfig {
+>     applicationId "finsolvz.beta"
+>     minSdkVersion rootProject.ext.minSdkVersion
+>     targetSdkVersion rootProject.ext.targetSdkVersion
+>     versionCode 1
+>     versionName "1.0"
+> }
+> ```  
+>   
+> - Increase the version number  
+>   
+> ```
+> versionCode 2
+> versionName "1.0.1"
+> ```  
+>   
+> - Save and rebuild.  
 
-Navigate to android/app/build.gradle
 
-Look for this section:
+<br/>
+<br/>
 
-defaultConfig {
-    applicationId "finsolvz.beta"
-    minSdkVersion rootProject.ext.minSdkVersion
-    targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 1
-    versionName "1.0"
-}
+#### Option 2: Using CLI (Expo / EAS)
 
+> Update **versionCode** and **versionName** manually, then build with:  
+>   
+> ```
+> npx expo run:android
+> ```  
+>   
+> <br/>  
+>   
+> Or with EAS:  
+>   
+> ```
+> eas build -p android --profile production
+> ```
 
-
-**Update it to something like:**
-
-versionCode 2
-versionName "1.0.1"
-
-Save and rebuild.
-
-
-**Option 2: Using CLI (Expo / EAS)**
-
-You can also update versionCode and versionName** manually,** then build with:
-
-npx expo run:android
-
-Or with EAS:
-
-eas build -p android --profile production
 
 **⚠️⚠️ versionCode must always increase with each upload to Play Store. ⚠️⚠️**
+
+## Important Links
+
+[Spreadsheet Template](https://docs.google.com/spreadsheets/d/1JQo7bi6PO8OXAym97Gp9xAVbDZm-L-I1/edit?usp=drive_link&ouid=102522500447593840388&rtpof=true&sd=true)
+
+[.env](https://drive.google.com/drive/u/5/folders/1WcZEPBtt_gYJztOoaan6Hn5ri1Q5h4xI)
 
