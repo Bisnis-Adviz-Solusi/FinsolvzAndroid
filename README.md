@@ -1,82 +1,140 @@
-# Nginx server block for finsolvz.adviz.id
+Finsolvz is a financial reporting platform built with React Native (Expo) for Android frontend and Express.js + MongoDB for backend. It helps companies submit and manage their financial reports (Balance Sheet, Profit & Loss, Revenue, etc.) through a simple, intuitive interface.
 
-# Server block for HTTP (port 80) - redirects to HTTPS
-server {
-    listen 80;
-    listen [::]:80;
+📲 Tech Stack
 
-    server_name www.finsolvz.adviz.id finsolvz.adviz.id;
+Frontend (Mobile): React Native (Expo), TypeScript
+Backend: Node.js, Express.js
+Database: MongoDB
+State Management: React hooks
+API Client: Axios
+Others: i18next (internationalization), AsyncStorage
 
-    # Redirect all HTTP traffic to HTTPS
-    return 301 https://$host$request_uri;
+-----------------------------
+
+🔗 Important Links
+Spreadsheet Template: [TBA](https://docs.google.com/spreadsheets/d/1JQo7bi6PO8OXAym97Gp9xAVbDZm-L-I1/edit?usp=drive_link&ouid=102522500447593840388&rtpof=true&sd=true)
+.env: [TBA](https://drive.google.com/drive/u/5/folders/1WcZEPBtt_gYJztOoaan6Hn5ri1Q5h4xI)
+
+-----------------------------
+
+🧪 How to Run This Project
+Backend (Express.js)
+
+cd backend
+npm install
+npm run dev
+
+Mobile App (React Native with Expo)
+cd mobile
+npm install
+npx expo start
+
+Make sure .env contains the following:
+
+EXPO_PUBLIC_API_URL=http://<your-local-ip>:<port>
+
+-----------------------------
+
+**App Flow (Simplified)**
+Login → Home → Upload Excel → Parse + Save → Show Table → View Detail / Compare Report
+
+**User Roles**
+SUPER_ADMIN: Full access to users, companies, and reports.
+ADMIN: Create/edit own reports, view company-related data.
+CLIENT: View reports assigned to their company only.
+
+-----------------------------
+
+** API Routes Summary**
+
+**Auth (6 routes)**
+POST /login
+GET /loginUser
+POST /logout
+POST /forgot-password
+POST /reset-password
+PATCH /change-password
+
+**Users (7 routes)**
+POST /users
+GET /users
+GET /users/:id
+GET /users/byName/:name
+PUT /updateUser/:id
+PUT /updateRole
+DELETE /users/:id
+
+**Companies (7 routes)**
+POST /company
+GET /company
+GET /company/:id
+GET /company/:name
+PUT /company/:id
+DELETE /company/:id
+GET /user/companies
+
+**Reports (11 routes)**
+POST /reports
+PUT /reports/:id
+DELETE /reports/:id
+GET /reports
+GET /reports/:id
+GET /reports/name/:name
+GET /reports/company/:companyId
+POST /reports/companies
+GET /reports/reportType/:reportTypeId
+GET /reports/userAccess/:userId
+GET /reports/createdBy/:userId
+
+**Report Types (6 routes)**
+GET /reportTypes
+GET /reportTypes/:id
+GET /reportTypes/:name
+POST /reportTypes
+PUT /reportTypes/:id
+DELETE /reportTypes/:id
+
+✅ Total: 37 API Routes
+
+**How to Increase Android Version (Expo Eject)**
+
+To update your Android version code and version name (required for Play Store uploads), you can do it manually via Android Studio or using CLI.
+
+**Option 1: Using Android Studio**
+
+Open project in Android Studio.
+
+Navigate to android/app/build.gradle
+
+Look for this section:
+
+defaultConfig {
+    applicationId "finsolvz.beta"
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0"
 }
 
-# Server block for HTTPS (port 443)
-server {
-    listen 443 ssl http2; # Listen on port 443, enable SSL/TLS and HTTP/2
-    listen [::]:443 ssl http2;
 
-    server_name www.finsolvz.adviz.id finsolvz.adviz.id;
 
-    # --- SSL/TLS Configuration ---
-    # IMPORTANT: Replace these paths with the actual paths to your SSL certificate and key.
-    # You typically obtain these from a Certificate Authority (e.g., Let's Encrypt).
-    ssl_certificate /etc/letsencrypt/live/finsolvz.adviz.id/fullchain.pem; # Path to your full chain certificate
-    ssl_certificate_key /etc/letsencrypt/live/finsolvz.adviz.id/privkey.pem; # Path to your private key
+**Update it to something like:**
 
-    # Recommended SSL settings for better security
-    ssl_protocols TLSv1.2 TLSv1.3; # Use strong protocols only
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH"; # Strong cipher suites
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-    ssl_session_tickets off;
-    ssl_stapling on; # OCSP Stapling
-    ssl_stapling_verify on;
-    # resolver 8.8.8.8 8.8.4.4 valid=300s; # Google DNS resolvers, adjust if needed
-    # resolver_timeout 5s;
+versionCode 2
+versionName "1.0.1"
 
-    # HSTS (HTTP Strict Transport Security)
-    # This header tells browsers to only interact with your site using HTTPS
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+Save and rebuild.
 
-    # --- Web Root and Index Files ---
-    # The root directive might not be strictly necessary if you are primarily proxying,
-    # but it's good to keep if you might serve static files directly in other locations.
-    root /var/www/finsolvz.adviz.id/html;
-    index index.html index.htm index.nginx-debian.html;
 
-    # --- Logging ---
-    access_log /var/log/nginx/finsolvz.adviz.id_access.log;
-    error_log /var/log/nginx/finsolvz.adviz.id_error.log warn;
+**Option 2: Using CLI (Expo / EAS)**
 
-    # --- Location Block for Proxy Pass ---
-    # This block now proxies all requests to http://localhost:8787
-    location / {
-        proxy_pass http://localhost:8787; # Proxy requests to the application running on port 8787
+You can also update versionCode and versionName** manually,** then build with:
 
-        # Optional: Add proxy headers to pass client information to the backend
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+npx expo run:android
 
-    # --- Optional: Error pages ---
-    error_page 404 /404.html;
-    location = /404.html {
-        internal;
-    }
+Or with EAS:
 
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        internal;
-    }
+eas build -p android --profile production
 
-    # --- Optional: Add common security headers for better practice ---
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-XSS-Protection "1; mode=block";
-    add_header X-Content-Type-Options "nosniff";
-    add_header Referrer-Policy "no-referrer-when-downgrade";
-}
+**⚠️⚠️ versionCode must always increase with each upload to Play Store. ⚠️⚠️**
 
