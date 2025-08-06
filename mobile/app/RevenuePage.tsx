@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, ActivityIndicator, StyleSheet, Alert } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Alert, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ArrowLeft } from "lucide-react-native";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import RevenueTable from "../components/RevenueTable";
 import { ScrollView } from "react-native-gesture-handler";
-import { useRoute, RouteProp } from "@react-navigation/native";
+import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import CompareButton from "../components/CompareButton";
 import { RootStackParamList } from "../types";
 import { useTranslation } from "react-i18next";
+import { ScrollWrapper } from "../helpers/ScrollWrapper";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const RevenuePage: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "Revenue">>();
+  const navigation = useNavigation();
   const { reportId, selectedCompany } = route.params;
-
   const [report, setReport] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableReports, setAvailableReports] = useState<any[]>([]);
@@ -178,17 +180,19 @@ const RevenuePage: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.fullScreen} contentContainerStyle={styles.contentContainer}>
-      
+    <ScrollWrapper style={styles.fullScreen} contentContainerStyle={styles.contentContainer}>
+      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+        <ArrowLeft color="#ffffff" size={24} />
+      </Pressable>
+
       {loading ? (
-    
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#6c918b" />
         </View>
       ) : (
         <View>
-            <Text style={styles.title}>{report?.reportType?.name || "No Report Found"}</Text>
-                 <Text style={styles.subtitle}>{report.company?.name}</Text>
+          <Text style={styles.title}>{report?.reportType?.name || "No Report Found"}</Text>
+          <Text style={styles.subtitle}>{report.company?.name}</Text>
           <Text style={styles.subtitle}>{report?.currency || "N/A"}</Text>
           <Text style={styles.subtitle}>{report?.year || "N/A"}</Text>
 
@@ -199,23 +203,17 @@ const RevenuePage: React.FC = () => {
             </View>
           )}
 
-          {availableReports.length > 0 && (
-            <CompareButton availableReports={availableReports} onCompareSelect={handleCompareSelect} />
-          )}
+          {availableReports.length > 0 && <CompareButton availableReports={availableReports} onCompareSelect={handleCompareSelect} />}
 
           {selectedComparisonReport?.reportType?.name === "Revenue" && selectedComparisonReport?.monthData && selectedComparisonReport?.categories && (
             <View>
-                <Text style={styles.sectionTitle}>{selectedComparisonReport.reportName}</Text>
-              <RevenueTable
-                monthData={selectedComparisonReport.monthData}
-                categories={selectedComparisonReport.categories}
-                hideChart={true}
-              />
+              <Text style={styles.sectionTitle}>{selectedComparisonReport.reportName}</Text>
+              <RevenueTable monthData={selectedComparisonReport.monthData} categories={selectedComparisonReport.categories} hideChart={true} />
             </View>
           )}
         </View>
       )}
-    </ScrollView>
+    </ScrollWrapper>
   );
 };
 
@@ -234,6 +232,15 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  backButton: {
+    marginTop: 48,
+    marginLeft: 16,
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   title: {
     fontSize: 16,
     fontFamily: "UbuntuBold",
@@ -260,15 +267,14 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 400,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  
 });
 
 export default RevenuePage;

@@ -36,7 +36,7 @@ export default function BSPLValueTable({
                 if ((l2 || l3) && openKeys.includes(currentKey)) {
                     return (
                         <View key={`val-${i}`} style={styles.dataRow}>
-                            <View style={[styles.cell, { minWidth: 200, alignItems: "flex-start" }]}>
+                            <View style={[styles.cell, { minWidth: 250, alignItems: "flex-start" }]}>
                                 <Text style={styles.text}>{l3 || l2}</Text>
                             </View>
                             {values.map((v: any, idx: number) => (
@@ -74,7 +74,6 @@ const styles = StyleSheet.create({
         alignItems: "flex-end",
     },
     headerText: {
-        fontWeight: "bold",
         color: "#0A6067",
     },
     dataRow: {

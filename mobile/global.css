@@ -1,0 +1,15 @@
+/* ANTI MUNCUL SCROLL BAR DI WEB */
+
+.scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+.horizontal-scroll-web {
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}

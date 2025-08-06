@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TouchableOpacity, Text, Dimensions, StyleSheet } from "react-native";
+import { View, ScrollView, TouchableOpacity, Text, Dimensions, StyleSheet, FlatList } from "react-native";
 import Svg, { Rect, G, Text as SvgText } from "react-native-svg";
+import { ScrollWrapper } from "../helpers/ScrollWrapper";
 
 interface ChartData {
   name: string;
@@ -11,7 +12,7 @@ interface BarChartProps {
   data: ChartData[];
   months: string[];
   categories: string[];
-  hideLegend?: boolean; 
+  hideLegend?: boolean;
 }
 
 const defaultColors = ["#FF6384", "#61a5c2", "#FFCE56", "#4CAF50", "#FF9800", "#9C27B0", "#3F51B5"];
@@ -34,50 +35,52 @@ const BarChartComponent: React.FC<BarChartProps> = ({ data, months, categories, 
     monthSpacing = 80;
   }
 
-  const maxValue = Math.max(...data.flatMap(d => d.values));
+  const maxValue = Math.max(...data.flatMap((d) => d.values));
 
   const categoryColors: Record<string, string> = {};
   categories.forEach((category, index) => {
     categoryColors[category] = generateColor(index);
   });
 
-  const filteredChartData = data.filter(d => selectedCategories.includes(d.name));
-  const totalChartWidth = months.length * (filteredChartData.length * (barWidth + barSpacing) + monthSpacing) + (selectedCategories.length > 0 ? 88 : 96);
-
+  const filteredChartData = data.filter((d) => selectedCategories.includes(d.name));
+  const totalChartWidth = Math.max(screenWidth * 1.5, months.length * (filteredChartData.length * (barWidth + barSpacing) + monthSpacing) + 100);
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+    setSelectedCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
   };
   useEffect(() => {
     // console.log("📊 BarChartComponent - Data yang diterima:", JSON.stringify(data, null, 2));
   }, [data]);
 
-
   return (
     <View>
       {/* Chart */}
-      <ScrollView horizontal>
-        <Svg width={Math.max(screenWidth, totalChartWidth)} height={360}>
-          {months.map((month, monthIndex) => (
-            <G key={monthIndex} x={monthIndex * (filteredChartData.length * (barWidth + barSpacing) + monthSpacing) + 42}>
-             
-             
-              {/* MonthS */}
-              <SvgText x={(filteredChartData.length * (barWidth + barSpacing)) / 2} y={275} fontSize={12} textAnchor="middle" fill="#FFFFFF" fontFamily="UbuntuBold">
+      <FlatList
+        data={months}
+        keyExtractor={(item, index) => `${item}-${index}`}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+        renderItem={({ item: month, index: monthIndex }) => (
+          <Svg width={filteredChartData.length * (barWidth + barSpacing) + monthSpacing} height={360}>
+            <G x={0}>
+              <SvgText
+                x={(filteredChartData.length * (barWidth + barSpacing)) / 2}
+                y={275}
+                fontSize={12}
+                textAnchor="middle"
+                fill="#FFFFFF"
+                fontFamily="UbuntuBold">
                 {month}
               </SvgText>
 
-
               {filteredChartData.map((company, companyIndex) => {
-                const value = company.values[monthIndex] || 0
+                const value = company.values[monthIndex] || 0;
                 const height = (value / maxValue) * 200;
                 return (
-                  <G key={companyIndex}>
+                  <G key={`${month}-${company.name}`}>
                     <Rect
+                      {...{ onClick: () => console.log("Klik:", company.name, month) }}
                       x={companyIndex * (barWidth + barSpacing)}
                       y={250 - height}
                       width={barWidth}
@@ -90,43 +93,35 @@ const BarChartComponent: React.FC<BarChartProps> = ({ data, months, categories, 
                       fontSize={8}
                       textAnchor="middle"
                       fill="#FFFFFF"
-                      fontFamily= "UbuntuRegular"
-                    >
+                      fontFamily="UbuntuRegular">
                       {value}
                     </SvgText>
                   </G>
                 );
               })}
             </G>
+          </Svg>
+        )}
+      />
+
+      {!hideLegend && (
+        <View style={[styles.legendContainer, { marginTop: -42 }]}>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.legendItem,
+                {
+                  borderColor: categoryColors[category],
+                  backgroundColor: selectedCategories.includes(category) ? categoryColors[category] : "transparent",
+                },
+              ]}
+              onPress={() => toggleCategory(category)}>
+              <Text style={[styles.legendText, { color: selectedCategories.includes(category) ? "#FFFFFF" : categoryColors[category] }]}>{category}</Text>
+            </TouchableOpacity>
           ))}
-        </Svg>
-      </ScrollView>
-      {!hideLegend && (<View style={[styles.legendContainer, { marginTop: -42 }]}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[
-              styles.legendItem,
-              {
-                borderColor: categoryColors[category],
-                backgroundColor: selectedCategories.includes(category) ? categoryColors[category] : "transparent"
-              }
-            ]}
-            onPress={() => toggleCategory(category)}
-          >
-            <Text style={[
-              styles.legendText,
-              { color: selectedCategories.includes(category) ? "#FFFFFF" : categoryColors[category] }
-            ]}>
-              {category}
-            </Text>
-          </TouchableOpacity>
-
-        ))}
-      </View>
-
-)}
-
+        </View>
+      )}
     </View>
   );
 };

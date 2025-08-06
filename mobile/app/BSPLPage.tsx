@@ -20,6 +20,8 @@ import BSPLTable from "../components/BSPLTable"
 import i18n from '../src/i18n/index'
 import { useTranslation } from "react-i18next"
 import { KeyboardAvoidingView } from "react-native"
+import { ScrollWrapper } from "../helpers/ScrollWrapper"
+import { Scroll } from "lucide-react-native"
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -94,7 +96,7 @@ const BSPLPage: React.FC = () => {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             style={{ flex: 1 }}
         >
-            <ScrollView
+            <ScrollWrapper
                 style={{ flex: 1, backgroundColor: "transparent" }}
                 contentContainerStyle={{
                     flexGrow: 1,
@@ -147,7 +149,7 @@ const BSPLPage: React.FC = () => {
                                 <View style={styles.modalBackdrop}>
                                     <View style={styles.modalContent}>
                                         <Text style={styles.modalTitle}>{t("chooseYears")}</Text>
-                                        <ScrollView style={{ maxHeight: 200 }}>
+                                        <ScrollWrapper style={{ maxHeight: 200 }}>
                                             {report.jsonHeaderParsed.map((year: string) => (
                                                 <TouchableOpacity
                                                     key={year}
@@ -167,7 +169,7 @@ const BSPLPage: React.FC = () => {
                                                     </Text>
                                                 </TouchableOpacity>
                                             ))}
-                                        </ScrollView>
+                                        </ScrollWrapper>
 
                                         <Pressable onPress={() => setYearModalVisible(false)} style={styles.modalCloseButton}>
                                             <Text style={{ color: "#fff", fontFamily: "UbuntuBold"}}>{t("done")}</Text>
@@ -188,7 +190,7 @@ const BSPLPage: React.FC = () => {
                         </>
                     )}
                 </View>
-            </ScrollView>
+            </ScrollWrapper>
         </KeyboardAvoidingView>
     )
 }
