@@ -25,12 +25,20 @@ jobs:
         cd web/server
         npm ci
       
-    - name: Build backend application
+    - name: Validate backend application
       run: |
         cd web/server
-        echo "🏗️ Building backend application..."
-        npm run start --if-present || echo "No build script found"
-        echo "✅ Backend build successful"
+        echo "🏗️ Validating backend application..."
+        # Check if main file exists
+        if [ -f "app.js" ]; then
+          echo "✅ Main application file found"
+        else
+          echo "❌ app.js not found"
+          exit 1
+        fi
+        # Syntax check without running
+        node -c app.js
+        echo "✅ Backend validation successful"
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -76,7 +84,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
         
     - name: Configure Docker to use gcloud as credential helper
-      run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
       
     # Backend deployment uses source deployment, no Docker build needed
         
@@ -159,7 +167,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
         
     - name: Configure Docker to use gcloud as credential helper
-      run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
       
     # Frontend deployment uses source deployment, no Docker build needed
         
