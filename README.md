@@ -39,6 +39,7 @@ npm run dev
 ```
 cd mobile
 npm install
+npx expo prebuild
 npx expo start
 ```
 <br/>
@@ -194,6 +195,36 @@ To update your Android version code and version name (required for Play Store up
 
 
 **⚠️⚠️ versionCode must always increase with each upload to Play Store. ⚠️⚠️**
+
+<br>
+
+<br/>
+
+## How to Increase AGP (Android Gradle Plugin)
+
+> - UPDATE AGP VERSION
+>   - Open \FinsolvzAndroid\mobile\android\build.gradle
+>
+>    ```
+>   dependencies {
+>    classpath( 'com.android.tools.build:gradle:8.12.0')
+>    classpath('com.facebook.react:react-native-gradle-plugin')
+>    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')}
+>   ```
+>   - Increase the version 
+>
+> <br/>
+>
+> - UPDATE GRADLE VERSION
+>   - Open \FinsolvzAndroid\mobile\android\gradle\wrapper\gradle-wrapper.properties
+>   - Edit distributionUrl [[Find compatible Gradle version](https://developer.android.com/studio/releases/gradle-plugin#updating-gradle)]
+>   - ```
+>        distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip
+>
+
+<br>
+
+<br/>
 
 ## Important Links
 
