@@ -2,7 +2,7 @@ name: Deploy to Cloud Run (Production)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, experiment/test-cicd-pipeline ]
   workflow_dispatch:
 
 jobs:
@@ -99,20 +99,7 @@ jobs:
           --memory 1Gi \
           --min-instances 0 \
           --max-instances 3 \
-          --set-env-vars \
-          NODE_ENV=production,\
-          GREETING="Finsolvz Legacy Backend API",\
-          MONGO_URI="${{ secrets.MONGODB_URI }}",\
-          JWT_SECRET="${{ secrets.JWT_SECRET }}",\
-          GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}",\
-          CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}",\
-          CLOUDINARY_API_KEY="${{ secrets.CLOUDINARY_API_KEY }}",\
-          CLOUDINARY_API_SECRET="${{ secrets.CLOUDINARY_API_SECRET }}",\
-          REDIS_HOST="${{ secrets.REDIS_HOST }}",\
-          REDIS_PORT="${{ secrets.REDIS_PORT }}",\
-          REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}",\
-          NODEMAILER_EMAIL="${{ secrets.NODEMAILER_EMAIL }}",\
-          NODEMAILER_PASS="${{ secrets.NODEMAILER_PASS }}" \
+          --set-env-vars "NODE_ENV=production,GREETING=Finsolvz Legacy Backend API,MONGO_URI=${{ secrets.MONGODB_URI }},JWT_SECRET=${{ secrets.JWT_SECRET }}" \
           --quiet
         
         echo "✅ Backend deployment completed"
