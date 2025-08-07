@@ -16,7 +16,7 @@ const BSPLTable: React.FC<BSPLTableProps> = ({ headers, data, selectedYears, lab
   const labelWidth = Math.max(windowWidth * 0.32, 160);
 
   const valueHeaders = headers.filter((h) => !h.toLowerCase().includes("category") && selectedYears.includes(h));
-
+ 
   const isSingle = valueHeaders.length === 1;
   const valueColWidth = isSingle ? containerWidth - labelWidth - 12 : Math.max(windowWidth * 0.24, 100);
 
