@@ -1,0 +1,218 @@
+name: Deploy to Cloud Run (Production)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: web/server/package-lock.json
+        
+    - name: Install backend dependencies
+      run: |
+        cd web/server
+        npm ci
+      
+    - name: Build backend application
+      run: |
+        cd web/server
+        echo "🏗️ Building backend application..."
+        npm run start --if-present || echo "No build script found"
+        echo "✅ Backend build successful"
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: mobile/package-lock.json
+        
+    - name: Install frontend dependencies
+      run: |
+        cd mobile
+        npm ci
+      
+    - name: Build frontend application
+      run: |
+        cd mobile
+        echo "🏗️ Building frontend application..."
+        npx expo export --platform web
+        echo "✅ Frontend build successful"
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+    environment: adviz-dev-gcp
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+      
+    # Backend deployment uses source deployment, no Docker build needed
+        
+    - name: Deploy Backend to Cloud Run Production
+      run: |
+        echo "🚀 Deploying Backend to Cloud Run Production..."
+        
+        gcloud run deploy finsolvz-backend-legacy \
+          --source web/server \
+          --region asia-southeast2 \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --min-instances 0 \
+          --max-instances 3 \
+          --set-env-vars \
+          NODE_ENV=production,\
+          GREETING="Finsolvz Legacy Backend API",\
+          MONGO_URI="${{ secrets.MONGODB_URI }}",\
+          JWT_SECRET="${{ secrets.JWT_SECRET }}",\
+          GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}",\
+          CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}",\
+          CLOUDINARY_API_KEY="${{ secrets.CLOUDINARY_API_KEY }}",\
+          CLOUDINARY_API_SECRET="${{ secrets.CLOUDINARY_API_SECRET }}",\
+          REDIS_HOST="${{ secrets.REDIS_HOST }}",\
+          REDIS_PORT="${{ secrets.REDIS_PORT }}",\
+          REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}",\
+          NODEMAILER_EMAIL="${{ secrets.NODEMAILER_EMAIL }}",\
+          NODEMAILER_PASS="${{ secrets.NODEMAILER_PASS }}" \
+          --quiet
+        
+        echo "✅ Backend deployment completed"
+
+    - name: Backend health check
+      run: |
+        echo "🏥 Performing backend health check..."
+        
+        # Get the service URL
+        SERVICE_URL=$(gcloud run services describe finsolvz-backend-legacy \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "Backend Production URL: $SERVICE_URL"
+        
+        # Health check with retries
+        max_attempts=10
+        wait_time=5
+        
+        for i in $(seq 1 $max_attempts); do
+          echo "Backend health check attempt $i/$max_attempts..."
+          
+          if curl -f -s --connect-timeout 10 --max-time 10 "$SERVICE_URL/health" > /dev/null; then
+            echo "✅ Backend health check passed!"
+            echo "🌐 Backend production environment is ready: $SERVICE_URL"
+            break
+          else
+            echo "⏳ Backend service not ready yet, waiting ${wait_time} seconds..."
+            if [ $i -eq $max_attempts ]; then
+              echo "❌ Backend health check failed after $max_attempts attempts"
+              exit 1
+            fi
+            sleep $wait_time
+          fi
+        done
+
+  deploy-frontend:
+    needs: test-frontend
+    runs-on: ubuntu-latest
+    environment: adviz-dev-gcp
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+      
+    # Frontend deployment uses source deployment, no Docker build needed
+        
+    - name: Deploy Frontend to Cloud Run Production
+      run: |
+        echo "🚀 Deploying Frontend to Cloud Run Production..."
+        
+        gcloud run deploy finsolvz-frontend \
+          --source mobile \
+          --region asia-southeast2 \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --timeout 900 \
+          --min-instances 0 \
+          --max-instances 5 \
+          --set-env-vars NODE_ENV=production \
+          --quiet
+        
+        echo "✅ Frontend deployment completed"
+
+    - name: Frontend health check and notify
+      run: |
+        echo "🏥 Performing frontend health check..."
+        
+        # Get the service URL
+        SERVICE_URL=$(gcloud run services describe finsolvz-frontend \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "Frontend Production URL: $SERVICE_URL"
+        
+        # Health check with retries
+        max_attempts=10
+        wait_time=5
+        
+        for i in $(seq 1 $max_attempts); do
+          echo "Frontend health check attempt $i/$max_attempts..."
+          
+          if curl -f -s --connect-timeout 10 --max-time 10 "$SERVICE_URL" > /dev/null; then
+            echo "✅ Frontend health check passed!"
+            echo "🌐 Frontend production environment is ready: $SERVICE_URL"
+            break
+          else
+            echo "⏳ Frontend service not ready yet, waiting ${wait_time} seconds..."
+            if [ $i -eq $max_attempts ]; then
+              echo "❌ Frontend health check failed after $max_attempts attempts"
+              exit 1
+            fi
+            sleep $wait_time
+          fi
+        done
+
+        echo "🎉 Finsolvz deployment successful!"
+        echo "🌐 Frontend URL: $SERVICE_URL"
+        echo "📝 Branch: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"

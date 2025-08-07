@@ -33,5 +33,13 @@ app.get("/favicon.ico", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "favicon.ico"));
 });
 
-const PORT = process.env.PORT || 8787;
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    service: "finsolvz-backend"
+  });
+});
+
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀🚀 Server running on http://159.89.194.251:${PORT} 🚀🚀`));
