@@ -1,0 +1,237 @@
+name: Deploy Finsolvz Legacy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: web/server/package-lock.json
+        
+    - name: Install backend dependencies
+      run: |
+        cd web/server
+        npm ci
+      
+    - name: Validate backend application
+      run: |
+        cd web/server
+        echo "🏗️ Validating backend application..."
+        if [ -f "app.js" ]; then
+          echo "✅ Main application file found"
+        else
+          echo "❌ app.js not found"
+          exit 1
+        fi
+        node -c app.js
+        echo "✅ Backend validation successful"
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test Docker build
+      run: |
+        echo "🐳 Testing Docker build for Finsolvz frontend..."
+        docker build -t finsolvz-frontend-test ./mobile
+        echo "✅ Docker build test successful"
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Docker image
+      run: |
+        echo "🐳 Building Docker image for Finsolvz backend production..."
+        
+        docker buildx build \
+          --platform linux/amd64 \
+          --push \
+          -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy:${{ github.sha }} \
+          -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy:latest \
+          ./web/server
+        
+        echo "✅ Finsolvz backend Docker image pushed successfully"
+        
+    - name: Deploy Backend to Cloud Run Production
+      run: |
+        echo "🚀 Deploying Finsolvz Backend to Cloud Run Production..."
+        
+        gcloud run deploy finsolvz-backend-legacy \
+          --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy:${{ github.sha }} \
+          --region asia-southeast1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --port 8080 \
+          --min-instances 0 \
+          --max-instances 3 \
+          --timeout 300 \
+          --set-env-vars "NODE_ENV=production,APP_ENV=production,GREETING=✨ Finsolvz Legacy Backend ✨,MONGO_URI=${{ secrets.FINSOLVZ_MONGO_URI }},JWT_SECRET=${{ secrets.FINSOLVZ_JWT_SECRET }},NODEMAILER_EMAIL=${{ secrets.FINSOLVZ_NODEMAILER_EMAIL }},NODEMAILER_PASS=${{ secrets.FINSOLVZ_NODEMAILER_PASS }},CLOUDINARY_CLOUD_NAME=${{ secrets.FINSOLVZ_CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.FINSOLVZ_CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.FINSOLVZ_CLOUDINARY_API_SECRET }}" \
+          --quiet
+        
+        echo "✅ Backend production deployment completed"
+
+    - name: Notify backend deployment
+      run: |
+        SERVICE_URL=$(gcloud run services describe finsolvz-backend-legacy \
+          --region=asia-southeast1 \
+          --format='value(status.url)')
+        
+        echo "🎉 FINSOLVZ BACKEND PRODUCTION DEPLOYMENT SUCCESSFUL! 🎉"
+        echo "🌐 Backend URL: $SERVICE_URL"
+        echo "📝 Branch: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"
+
+  deploy-frontend:
+    needs: test-frontend
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Docker image
+      run: |
+        echo "🐳 Building Docker image for Finsolvz frontend production..."
+        
+        # Get production backend URL
+        BACKEND_URL=$(gcloud run services describe finsolvz-backend-legacy \
+          --region=asia-southeast1 \
+          --format='value(status.url)' 2>/dev/null || echo "")
+        
+        if [ -z "$BACKEND_URL" ]; then
+          echo "⚠️ Backend service not found, using placeholder URL"
+          BACKEND_URL="https://finsolvz-backend-legacy-982826961245.asia-southeast1.run.app"
+        fi
+        
+        echo "Using backend URL: $BACKEND_URL"
+        
+        docker buildx build \
+          --platform linux/amd64 \
+          --push \
+          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL}/api \
+          -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend:${{ github.sha }} \
+          -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend:latest \
+          ./mobile
+        
+        echo "✅ Finsolvz frontend Docker image pushed successfully"
+        
+    - name: Deploy Frontend to Cloud Run Production
+      run: |
+        echo "🚀 Deploying Finsolvz Frontend to Cloud Run Production..."
+        
+        gcloud run deploy finsolvz-frontend \
+          --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend:${{ github.sha }} \
+          --region asia-southeast1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 512Mi \
+          --cpu 1 \
+          --port 8080 \
+          --min-instances 0 \
+          --max-instances 5 \
+          --timeout 300 \
+          --set-env-vars NODE_ENV=production \
+          --quiet
+        
+        echo "✅ Frontend production deployment completed"
+
+    - name: Frontend health check
+      run: |
+        echo "🏥 Performing frontend health check..."
+        
+        SERVICE_URL=$(gcloud run services describe finsolvz-frontend \
+          --region=asia-southeast1 \
+          --format='value(status.url)')
+        
+        echo "Frontend Production URL: $SERVICE_URL"
+        
+        max_attempts=15
+        wait_time=10
+        
+        for i in $(seq 1 $max_attempts); do
+          echo "Frontend health check attempt $i/$max_attempts..."
+          
+          if curl -f -s --connect-timeout 15 --max-time 15 "$SERVICE_URL" > /dev/null; then
+            echo "✅ Frontend health check passed!"
+            echo "🌐 Frontend is ready: $SERVICE_URL"
+            exit 0
+          else
+            echo "⏳ Frontend service not ready yet, waiting ${wait_time} seconds..."
+            sleep $wait_time
+          fi
+        done
+        
+        echo "❌ Frontend health check failed after $max_attempts attempts"
+        exit 1
+
+    - name: Notify frontend deployment
+      run: |
+        SERVICE_URL=$(gcloud run services describe finsolvz-frontend \
+          --region=asia-southeast1 \
+          --format='value(status.url)')
+        
+        echo "🎉 FINSOLVZ FRONTEND PRODUCTION DEPLOYMENT SUCCESSFUL! 🎉"
+        echo "🌐 Frontend URL: $SERVICE_URL"
+        echo "📝 Branch: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"
+        echo "⚠️  Remember to verify custom domain mapping!"

@@ -1,0 +1,258 @@
+name: Deploy Finsolvz Legacy to Development
+
+on:
+  push:
+    branches: [ dev, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: web/server/package-lock.json
+        
+    - name: Install backend dependencies
+      run: |
+        cd web/server
+        npm ci
+      
+    - name: Validate backend application
+      run: |
+        cd web/server
+        echo "🏗️ Validating backend application..."
+        if [ -f "app.js" ]; then
+          echo "✅ Main application file found"
+        else
+          echo "❌ app.js not found"
+          exit 1
+        fi
+        node -c app.js
+        echo "✅ Backend validation successful"
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test Docker build
+      run: |
+        echo "🐳 Testing Docker build for Finsolvz frontend..."
+        docker build -t finsolvz-frontend-test ./mobile
+        echo "✅ Docker build test successful"
+
+  deploy-backend:
+    needs: test-backend
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
+
+    - name: Build and push Docker image
+      run: |
+        echo "🐳 Building Docker image for Finsolvz backend development..."
+        
+        docker build -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:${{ github.sha }} ./web/server
+        docker tag asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:${{ github.sha }} asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:latest
+        
+        docker push asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:${{ github.sha }}
+        docker push asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:latest
+        
+        echo "✅ Finsolvz backend dev Docker image pushed successfully"
+        
+    - name: Deploy Backend to Cloud Run Development
+      run: |
+        echo "🚀 Deploying Finsolvz Backend to Cloud Run Development..."
+        
+        gcloud run deploy finsolvz-backend-legacy-dev \
+          --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-backend-legacy-dev:${{ github.sha }} \
+          --region asia-southeast2 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 1Gi \
+          --cpu 1 \
+          --port 8080 \
+          --min-instances 0 \
+          --max-instances 3 \
+          --timeout 300 \
+          --set-env-vars "NODE_ENV=development,APP_ENV=development,GREETING=🚧 Finsolvz Legacy Backend DEV 🚧,MONGO_URI=${{ secrets.FINSOLVZ_MONGO_URI }},JWT_SECRET=${{ secrets.FINSOLVZ_JWT_SECRET }},NODEMAILER_EMAIL=${{ secrets.FINSOLVZ_NODEMAILER_EMAIL }},NODEMAILER_PASS=${{ secrets.FINSOLVZ_NODEMAILER_PASS }},CLOUDINARY_CLOUD_NAME=${{ secrets.FINSOLVZ_CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.FINSOLVZ_CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.FINSOLVZ_CLOUDINARY_API_SECRET }}" \
+          --quiet
+        
+        echo "✅ Backend development deployment completed"
+
+    - name: Backend health check
+      run: |
+        echo "🏥 Performing backend health check..."
+        
+        SERVICE_URL=$(gcloud run services describe finsolvz-backend-legacy-dev \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "Backend Development URL: $SERVICE_URL"
+        
+        max_attempts=15
+        wait_time=5
+        
+        for i in $(seq 1 $max_attempts); do
+          echo "Backend health check attempt $i/$max_attempts..."
+          
+          if curl -f -s --connect-timeout 10 --max-time 10 "$SERVICE_URL/health" > /dev/null; then
+            echo "✅ Backend health check passed!"
+            echo "🌐 Backend dev environment is ready: $SERVICE_URL"
+            exit 0
+          else
+            echo "⏳ Backend service not ready yet, waiting ${wait_time} seconds..."
+            sleep $wait_time
+          fi
+        done
+        
+        echo "❌ Backend health check failed after $max_attempts attempts"
+        exit 1
+
+    - name: Notify backend deployment
+      run: |
+        SERVICE_URL=$(gcloud run services describe finsolvz-backend-legacy-dev \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "🚀 FINSOLVZ BACKEND DEV DEPLOYMENT SUCCESSFUL! 🚀"
+        echo "🌐 Backend Dev URL: $SERVICE_URL"
+        echo "📝 Branch: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"
+
+  deploy-frontend:
+    needs: test-frontend
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Set up Cloud SDK
+      uses: 'google-github-actions/setup-gcloud@v2'
+        
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
+
+    - name: Build and push Docker image
+      run: |
+        echo "🐳 Building Docker image for Finsolvz frontend development..."
+        
+        # Get backend URL for frontend to connect to
+        BACKEND_URL=$(gcloud run services describe finsolvz-backend-legacy-dev \
+          --region=asia-southeast2 \
+          --format='value(status.url)' 2>/dev/null || echo "")
+        
+        if [ -z "$BACKEND_URL" ]; then
+          echo "⚠️ Backend service not found, using placeholder URL"
+          BACKEND_URL="https://finsolvz-backend-legacy-dev-982826961245.asia-southeast2.run.app"
+        fi
+        
+        echo "Using backend URL: $BACKEND_URL"
+        
+        docker build -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }} \
+          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL}/api \
+          ./mobile
+        docker tag asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }} asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:latest
+        
+        docker push asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }}
+        docker push asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:latest
+        
+        echo "✅ Finsolvz frontend dev Docker image pushed successfully"
+        
+    - name: Deploy Frontend to Cloud Run Development
+      run: |
+        echo "🚀 Deploying Finsolvz Frontend to Cloud Run Development..."
+        
+        gcloud run deploy finsolvz-frontend-dev \
+          --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }} \
+          --region asia-southeast2 \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 512Mi \
+          --cpu 1 \
+          --port 8080 \
+          --min-instances 0 \
+          --max-instances 5 \
+          --timeout 300 \
+          --set-env-vars NODE_ENV=development \
+          --quiet
+        
+        echo "✅ Frontend development deployment completed"
+
+    - name: Frontend health check
+      run: |
+        echo "🏥 Performing frontend health check..."
+        
+        SERVICE_URL=$(gcloud run services describe finsolvz-frontend-dev \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "Frontend Development URL: $SERVICE_URL"
+        
+        max_attempts=15
+        wait_time=10
+        
+        for i in $(seq 1 $max_attempts); do
+          echo "Frontend health check attempt $i/$max_attempts..."
+          
+          if curl -f -s --connect-timeout 15 --max-time 15 "$SERVICE_URL" > /dev/null; then
+            echo "✅ Frontend health check passed!"
+            echo "🌐 Frontend dev is ready: $SERVICE_URL"
+            exit 0
+          else
+            echo "⏳ Frontend service not ready yet, waiting ${wait_time} seconds..."
+            sleep $wait_time
+          fi
+        done
+        
+        echo "❌ Frontend health check failed after $max_attempts attempts"
+        exit 1
+
+    - name: Notify frontend deployment
+      run: |
+        SERVICE_URL=$(gcloud run services describe finsolvz-frontend-dev \
+          --region=asia-southeast2 \
+          --format='value(status.url)')
+        
+        echo "🚀 FINSOLVZ FRONTEND DEV DEPLOYMENT SUCCESSFUL! 🚀"
+        echo "🌐 Frontend Dev URL: $SERVICE_URL"
+        echo "📝 Branch: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"

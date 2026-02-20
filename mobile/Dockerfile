@@ -3,6 +3,10 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Build argument for API URL (injected from CI/CD)
+ARG EXPO_PUBLIC_API_URL
+ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
+
 # Copy package files
 COPY package*.json ./
 
