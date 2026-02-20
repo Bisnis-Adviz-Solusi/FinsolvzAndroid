@@ -188,7 +188,7 @@ jobs:
         echo "Using backend URL: $BACKEND_URL"
         
         docker build -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }} \
-          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL}/api \
+          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL} \
           ./mobile
         docker tag asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:${{ github.sha }} asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend-dev:latest
         

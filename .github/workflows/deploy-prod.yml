@@ -168,7 +168,7 @@ jobs:
         docker buildx build \
           --platform linux/amd64 \
           --push \
-          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL}/api \
+          --build-arg EXPO_PUBLIC_API_URL=${BACKEND_URL} \
           -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend:${{ github.sha }} \
           -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/adviz/finsolvz-frontend:latest \
           ./mobile
