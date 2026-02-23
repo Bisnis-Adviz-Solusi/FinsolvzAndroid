@@ -5,6 +5,7 @@ export default {
     name: "finsolvz",
     slug: "finsolvz",
     version: "1.0.3",
+    plugins: ["expo-router", "expo-secure-store"],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       eas: {

@@ -3,7 +3,7 @@
     "name": "finsolvz",
     "slug": "mobile",
     "version": "1.0.3", 
-    "sdkVersion": "53.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/image/LogoHorizontal.png",
     "splash": {
