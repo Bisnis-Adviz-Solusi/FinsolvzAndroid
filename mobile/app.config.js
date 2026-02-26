@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "finsolvz",
     slug: "finsolvz",
-    version: "1.0.3",
+    version: "1.0.4",
     plugins: ["expo-router", "expo-secure-store"],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
