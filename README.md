@@ -1,3 +1,7 @@
+## IMPORTANT NOTE
+*DO NOT DELETE* PROD KEYSTORE AND UPLOAD_CERTIFICATE.PEM
+JUST DON'T. UNLESS YOU HAVE GOOD REASON FOR IT
+
 # OVERVIEW
 Finsolvz is a financial reporting platform built with React Native (Expo) for Android frontend and Express.js + MongoDB for backend. It helps companies submit and manage their financial reports (Balance Sheet, Profit & Loss, Revenue, etc.) through a simple, intuitive interface.
 
