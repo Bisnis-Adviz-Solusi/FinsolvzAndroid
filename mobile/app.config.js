@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "finsolvz",
     slug: "finsolvz",
-    version: "1.0.4",
+    version: "1.0.5",
     plugins: ["expo-router", "expo-secure-store"],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
@@ -13,7 +13,7 @@ export default {
       },
     },
     android: {
-      package: "com.adviz.finsolvz",
+      package: "finsolvz.beta",
     },
 
     web: {
