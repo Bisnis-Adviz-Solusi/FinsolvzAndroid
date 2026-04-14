@@ -214,6 +214,12 @@ const LoginPage: React.FC = () => {
     }
   })
 
+  console.log('SCREEN_RENDER_CHECK>>>', {
+    screenName: 'LoginPage',
+    keyboardOpen,
+    modalVisible,
+  })
+
   const handleLogin = async () => {
     if (email.trim() === '' || password.trim() === '') {
       setErrorMessage(t('login.pleaseFillAllFields'))
@@ -226,8 +232,16 @@ const LoginPage: React.FC = () => {
 
       if (access_token) {
         await AsyncStorage.setItem('authToken', access_token)
-        const payload = JSON.parse(atob(access_token.split('.')[1]))
-        const userRole = payload.role
+        const profileResponse = await axios.get(`${API_URL}/api/loginUser`, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        })
+        const userRole = profileResponse.data?.role as string | undefined
+
+        console.log('API_RESPONSE_DEBUG>>>', {
+          scope: 'LoginPage.handleLogin',
+          hasAccessToken: Boolean(access_token),
+          userRole,
+        })
 
         if (userRole === 'CLIENT') {
           navigation.reset({
@@ -244,6 +258,11 @@ const LoginPage: React.FC = () => {
         setErrorMessage(t('login.wrongEmailOrPassword'))
       }
     } catch (error) {
+      console.log('IOS_COMPATIBILITY_CHECK>>>', {
+        scope: 'LoginPage.handleLogin',
+        platform: Platform.OS,
+        error,
+      })
       setErrorMessage(t('login.wrongEmailOrPassword'))
     }
   }
@@ -274,6 +293,11 @@ const LoginPage: React.FC = () => {
     }
   }
   React.useEffect(() => {
+    console.log('PERFORMANCE_TRACE>>>', {
+      scope: 'LoginPage.keyboardListeners',
+      platform: Platform.OS,
+    })
+
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
       setKeyboardOpen(true)
     })
@@ -511,7 +535,7 @@ const LoginPage: React.FC = () => {
         {/* @ts-ignore */}
           <BlurView
             intensity={30}
-              experimentalBlurMethod= "dimezisBlurView"
+            {...(Platform.OS === 'android' ? { experimentalBlurMethod: 'dimezisBlurView' } : {})}
             tint="dark"
             style={{
               ...StyleSheet.absoluteFillObject,

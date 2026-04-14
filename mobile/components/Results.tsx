@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -34,6 +34,14 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ selectedCompany, reportType }
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
 
+  console.log("SCREEN_RENDER_CHECK>>>", {
+    screenName: "ResultsPage",
+    selectedCompany,
+    reportType,
+    reportsCount: reports.length,
+    loading,
+  });
+
 
   const fetchReports = async () => {
     if (!selectedCompany || !reportType) return;
@@ -68,24 +76,26 @@ const ResultsPage: React.FC<ResultsPageProps> = ({ selectedCompany, reportType }
   const isMandarin = i18n.language === 'zh' || i18n.language === 'cn';
   const mandarinRegex = /资产负债表|利润表|收入/;
 
-  const filteredReports = reports.filter((r) => {
-    const typeMatch = reportType ? reportType.includes(r.reportType?._id) : true;
-    const reportName = r.reportName || "";
+  const filteredReports = useMemo(
+    () =>
+      reports.filter((r) => {
+        const typeMatch = reportType ? reportType.includes(r.reportType?._id) : true;
+        const reportName = r.reportName || "";
 
-    let titleMatch = true;
+        let titleMatch = true;
 
-    if (isMandarin) {
-      if (!mandarinRegex.test(reportName)) {
-        titleMatch = false;
-      }
-    } else {
-      if (mandarinRegex.test(reportName)) {
-        titleMatch = false;
-      }
-    }
+        if (isMandarin) {
+          if (!mandarinRegex.test(reportName)) {
+            titleMatch = false;
+          }
+        } else if (mandarinRegex.test(reportName)) {
+          titleMatch = false;
+        }
 
-    return typeMatch && titleMatch;
-  });
+        return typeMatch && titleMatch;
+      }),
+    [isMandarin, reportType, reports]
+  );
 
 
 

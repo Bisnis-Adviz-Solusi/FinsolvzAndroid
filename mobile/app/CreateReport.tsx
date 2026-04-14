@@ -51,6 +51,13 @@ const CreateReportPage = () => {
     const fallbackSelected = { row: jsonData.length - 1, col: jsonHeader.length - 1 };
     const navigation = useNavigation();
 
+    console.log("SCREEN_RENDER_CHECK>>>", {
+        screenName: "CreateReportPage",
+        reportId: reportId ?? null,
+        headerCount: jsonHeader.length,
+        rowCount: jsonData.length,
+    });
+
     const handlePickExcel = async (): Promise<void> => {
         const result = await DocumentPicker.getDocumentAsync({
             type: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"],
@@ -61,6 +68,12 @@ const CreateReportPage = () => {
         if (!result.assets || result.assets.length === 0) return;
 
         const file = result.assets[0];
+        console.log("IOS_COMPATIBILITY_CHECK>>>", {
+            scope: "CreateReportPage.handlePickExcel",
+            platform: "native",
+            mimeType: file.mimeType ?? null,
+            uri: file.uri,
+        });
         const response = await fetch(file.uri);
         const blob = await response.blob();
         const reader = new FileReader();
@@ -70,6 +83,11 @@ const CreateReportPage = () => {
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
             const [headerRow, ...bodyRows] = json;
+            console.log("API_RESPONSE_DEBUG>>>", {
+                scope: "CreateReportPage.importExcel",
+                importedHeaderCount: Array.isArray(headerRow) ? headerRow.length : 0,
+                importedRowCount: bodyRows.length,
+            });
             setJsonHeader((headerRow as unknown[]).map((cell) => String(cell ?? "")));
             setJsonData((bodyRows as unknown[][]).map((row) => row.map((cell) => String(cell ?? ""))));
         };

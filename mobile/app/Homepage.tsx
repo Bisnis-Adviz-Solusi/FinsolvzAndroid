@@ -193,6 +193,15 @@ const [, setRefreshing] = useState(false);
   //hiasan
   const { width } = useWindowDimensions();
 
+console.log("SCREEN_RENDER_CHECK>>>", {
+  screenName: "HomePage",
+  reportsCount: reports.length,
+  usersCount: users.length,
+  companiesCount: companies.length,
+  loading,
+  isRefreshing,
+});
+
 // ==========================  HELPER FUNCTIONS ==========================
 
 function roleLogin(role: string) {
@@ -231,6 +240,12 @@ useEffect(() => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("API_RESPONSE_DEBUG>>>", {
+        scope: "HomePage.initUserProfile",
+        userId: response.data?._id,
+        role: response.data?.role,
+      });
+
       setUserName(response.data.name);
       setUserRole(response.data.role);
 
@@ -267,6 +282,12 @@ const refreshData = async () => {
 
     const userRes = await axios.get(`${API_URL}/api/loginUser`, {
       headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("PERFORMANCE_TRACE>>>", {
+      scope: "HomePage.refreshData",
+      role: userRes.data?.role,
+      reportRefresh: true,
     });
 
     const userData = userRes.data;
