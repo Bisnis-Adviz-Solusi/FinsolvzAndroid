@@ -16,6 +16,7 @@
     "enterYourEmail": "输入您的电子邮件",
     "send": "发送",
     "signIn": "登录",
+    "loading": "LOADING",
     "wrongEmailOrPassword": "邮箱或密码错误",
     "pleaseFillAllFields": "请填写所有字段",
     "invalidEmailAddress": "无效的电子邮件地址",

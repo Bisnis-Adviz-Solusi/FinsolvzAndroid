@@ -7,7 +7,7 @@ export default {
   expo: {
     name: "finsolvz",
     slug: "finsolvz",
-    version: "1.0.5",
+    version: "1.0.8",
     orientation: "portrait",
     icon: "./assets/image/LogoHorizontal.png",
     splash: {
@@ -25,15 +25,19 @@ export default {
       },
     },
     ios: {
+      buildNumber: "8",
       supportsTablet: true,
       bundleIdentifier: "finsolvz.beta",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
+      supportsTablet: false,
     },
+    icon: "./assets/image/logoFinsolvz.png",
+
     android: {
       package: "finsolvz.beta",
-      versionCode: 5,
+      versionCode: 8,
       adaptiveIcon: {
         foregroundImage: "./assets/image/logoFinsolvz.png",
         backgroundColor: "#011414",

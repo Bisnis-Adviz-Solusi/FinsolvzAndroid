@@ -17,6 +17,7 @@
     "cancel": "Cancel",
     "send": "Send",
     "signIn": "SIGN IN",
+    "loading": "LOADING",
     "wrongEmailOrPassword": "Wrong email or password",
     "pleaseFillAllFields": "Please fill in all fields",
     "invalidEmailAddress": "Invalid email address",

@@ -2,7 +2,7 @@ import i18n from '../src/i18n'
 import React, { useEffect } from 'react'
 import { useState } from 'react'
 import { BlurView } from 'expo-blur'
-import { View, Image, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity, Alert } from 'react-native'
+import { View, Image, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity, Alert, ScrollView } from 'react-native'
 import { Video, ResizeMode } from 'expo-av'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Button, HelperText, Modal, Portal, TextInput } from 'react-native-paper'
@@ -13,7 +13,7 @@ import { RootStackParamList } from '../types'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTranslation } from 'react-i18next'
 import { Keyboard } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 // import Constants from 'expo-constants'
 // import * as FileSystem from 'expo-file-system'
 // import * as IntentLauncher from 'expo-intent-launcher'
@@ -55,14 +55,27 @@ const styles = StyleSheet.create({
     zIndex: 10,
     marginLeft: -16,
   },
-  containerForm: {
-    position: 'absolute',
-    bottom: 64,
+  contentWrapper: {
+    flex: 1,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
     width: '100%',
     paddingHorizontal: 24,
+    paddingBottom: 64,
     zIndex: 10,
   },
-
+  topControls: {
+    position: 'absolute',
+    top: 48,
+    right: 24,
+    zIndex: 20,
+    flexDirection: 'row',
+  },
+  formSection: {
+    width: '100%',
+  },
 
   jargonLine1: {
     fontSize: screenWidth * 0.08 ,
@@ -137,6 +150,7 @@ const styles = StyleSheet.create({
 const LoginPage: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>()
   const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
 
 
   const [email, setEmail] = useState('')
@@ -148,6 +162,7 @@ const LoginPage: React.FC = () => {
   const [otpMessage, setOtpMessage] = useState('')
   const [otpMessageType, setOtpMessageType] = useState<'error' | 'info'>('info')
   const [otpLoading, setOtpLoading] = useState(false)
+  const [loginLoading, setLoginLoading] = useState(false)
   const [language, setLanguage] = useState(i18n.language || 'en')
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   // const [showUpdateModal, setShowUpdateModal] = useState(false)
@@ -220,11 +235,28 @@ const LoginPage: React.FC = () => {
     modalVisible,
   })
 
+  console.log('LOGIN_LAYOUT_DEBUG>>>', {
+    platform: Platform.OS,
+    keyboardOpen,
+  })
+
+  console.log('LOGIN_CONTAINER_POSITION>>>', {
+    hasAbsoluteForm: false,
+  })
+
+  console.log('IOS_KEYBOARD_TRACE>>>', {
+    behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+    keyboardVerticalOffset: Platform.OS === 'ios' ? insets.top : 0,
+  })
+
   const handleLogin = async () => {
     if (email.trim() === '' || password.trim() === '') {
       setErrorMessage(t('login.pleaseFillAllFields'))
       return
     }
+
+    setLoginLoading(true)
+    setErrorMessage('')
 
     try {
       const response = await axios.post(`${API_URL}/api/login`, { email, password })
@@ -264,6 +296,8 @@ const LoginPage: React.FC = () => {
         error,
       })
       setErrorMessage(t('login.wrongEmailOrPassword'))
+    } finally {
+      setLoginLoading(false)
     }
   }
 
@@ -320,6 +354,7 @@ const LoginPage: React.FC = () => {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
         {/* {showUpdateModal && (
           <View style={{
@@ -390,7 +425,7 @@ const LoginPage: React.FC = () => {
       <View style={styles.bottomBackground} />
         {!keyboardOpen && (
           <>
-            <View style={{ position: 'absolute', top: 48, right: 24, zIndex: 20, flexDirection: 'row' }}>
+            <View style={styles.topControls}>
               <Text
                 onPress={async () => {
                   i18n.changeLanguage('zh')
@@ -431,7 +466,14 @@ const LoginPage: React.FC = () => {
           </>
         )}
 
-      <View style={styles.containerForm}>
+      <ScrollView
+        style={styles.contentWrapper}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="always"
+        bounces={false}
+      >
+        <View style={styles.formSection}>
           {!keyboardOpen && (
             <>
               <Text style={styles.jargonLine1}>
@@ -445,90 +487,99 @@ const LoginPage: React.FC = () => {
             </>
           )}
 
+          <HelperText
+            type="error"
+            visible={errorMessage.length > 0}
+            style={{ color: '#FF6B6B', fontSize: 14, fontFamily: 'UbuntuLight', marginTop: 8, paddingLeft: 0 }}
+          >
+            {errorMessage}
+          </HelperText>
+          <TextInput
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+            placeholder={t('login.emailPlaceholder')}
+            mode="flat"
+            underlineColor="#E2E4D7"
+            placeholderTextColor="rgba(226, 228, 215, 0.58)"
+            activeUnderlineColor="#2BA787"
+            textColor="#E2E4D7"
+            style={[
+              styles.formInput,
+              { backgroundColor: 'transparent', fontFamily: 'UbuntuLightItalic' }
+            ]}
+            contentStyle={{ fontFamily: email.length > 0 ? 'UbuntuRegular' : 'UbuntuLightItalic', paddingLeft: 0 }}
+          />
 
-        <HelperText
-          type="error"
-          visible={errorMessage.length > 0}
-          style={{ color: '#FF6B6B', fontSize: 14, fontFamily: 'UbuntuLight', marginTop: 8, paddingLeft: 0 }}
-        >
-          {errorMessage}
-        </HelperText>
-        <TextInput
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-          placeholder={t('login.emailPlaceholder')}
-          mode="flat"
-          underlineColor="#E2E4D7"
-          placeholderTextColor="rgba(226, 228, 215, 0.58)"
-          activeUnderlineColor="#2BA787"
-          textColor="#E2E4D7"
-          style={[
-            styles.formInput,
-            { backgroundColor: 'transparent', fontFamily: 'UbuntuLightItalic' }
-          ]}
-          contentStyle={{ fontFamily: email.length > 0 ? 'UbuntuRegular' : 'UbuntuLightItalic', paddingLeft: 0 }}
-        />
+          <TextInput
+            autoCapitalize="none"
+            value={password}
+            onChangeText={setPassword}
+            placeholder={t('login.passwordPlaceholder')}
+            mode="flat"
+            underlineColor="#E2E4D7"
+            activeUnderlineColor="#2BA787"
+            placeholderTextColor="rgba(226, 228, 215, 0.58)"
+            secureTextEntry={!showPassword}
+            textColor="#E2E4D7"
+            style={[
+              styles.formInput,
+              { backgroundColor: 'transparent' }
+            ]}
+            contentStyle={{ fontFamily: password.length > 0 ? 'UbuntuRegular' : 'UbuntuLightItalic', paddingLeft: 0 }}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                color="rgba(226, 228, 215, 0.58)"
+                onPress={() => setShowPassword(!showPassword)}
+              />
+            }
+          />
 
-        <TextInput
-          autoCapitalize="none"
-          value={password}
-          onChangeText={setPassword}
-          placeholder={t('login.passwordPlaceholder')}
-          mode="flat"
-          underlineColor="#E2E4D7"
-          activeUnderlineColor="#2BA787"
-          placeholderTextColor="rgba(226, 228, 215, 0.58)"
-          secureTextEntry={!showPassword}
-          textColor="#E2E4D7"
-          style={[
-            styles.formInput,
-            { backgroundColor: 'transparent' }
-          ]}
-          contentStyle={{ fontFamily: password.length > 0 ? 'UbuntuRegular' : 'UbuntuLightItalic', paddingLeft: 0 }}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              color="rgba(226, 228, 215, 0.58)"
-              onPress={() => setShowPassword(!showPassword)}
-            />
-          }
-        />
+          <Text
+            onPress={() => {
+              setOtpEmail(email)
+              setModalVisible(true)
+            }}
+            style={{
+              color: '#2BA787',
+              marginTop: 12,
+              fontFamily: 'UbuntuRegular',
+              fontSize: 14,
+            }}
+          >
+            {t('login.forgotPassword')}
+          </Text>
 
-        <Text
-          onPress={() => {
-            setOtpEmail(email)
-            setModalVisible(true)
-          }}
-          style={{
-            color: '#2BA787',
-            marginTop: 12,
-            fontFamily: 'UbuntuRegular',
-            fontSize: 14,
-          }}
-        >
-          {t('login.forgotPassword')}
-        </Text>
-
-        <Pressable
-          style={{ width: '100%', alignItems: 'center' }}
-          onPressIn={() => {
-            scale.value = withTiming(0.95, { duration: 100 })
-            opacity.value = withTiming(0.8, { duration: 100 })
-          }}
-          onPressOut={() => {
-            scale.value = withTiming(1, { duration: 100 })
-            opacity.value = withTiming(1, { duration: 100 })
-          }}
-          onPress={handleLogin}
-        >
-          <Animated.View style={[styles.buttonLogin, animatedStyle]}>
-            <Text style={styles.buttonLoginText}>
-              {t('login.signIn')}
-            </Text>
-          </Animated.View>
-        </Pressable>
-      </View>
+          <Pressable
+            style={{ width: '100%', alignItems: 'center' }}
+            disabled={loginLoading}
+            onPressIn={() => {
+              if (loginLoading) return
+              scale.value = withTiming(0.95, { duration: 100 })
+              opacity.value = withTiming(0.8, { duration: 100 })
+            }}
+            onPressOut={() => {
+              if (loginLoading) return
+              scale.value = withTiming(1, { duration: 100 })
+              opacity.value = withTiming(1, { duration: 100 })
+            }}
+            onPress={handleLogin}
+          >
+            <Animated.View
+              style={[
+                styles.buttonLogin,
+                animatedStyle,
+                loginLoading && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={styles.buttonLoginText}>
+                {loginLoading ? t('login.loading') : t('login.signIn')}
+              </Text>
+            </Animated.View>
+          </Pressable>
+        </View>
+      </ScrollView>
 
       {modalVisible && (
         <>
