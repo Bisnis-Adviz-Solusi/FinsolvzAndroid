@@ -28,15 +28,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#000609',
   },
   video: {
-    width: '100%',
-    height: '100%',
-    marginTop: -112,
+    ...StyleSheet.absoluteFillObject,
   },
   gradient: {
-    position: 'absolute',
-    width: '100%',
-    height: '104%',
-    marginTop: -112,
+    ...StyleSheet.absoluteFillObject,
   },
   bottomBackground: {
     ...StyleSheet.absoluteFillObject,
@@ -63,6 +58,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     width: '100%',
     paddingHorizontal: 24,
+    paddingTop: 160,
     paddingBottom: 64,
     zIndex: 10,
   },
