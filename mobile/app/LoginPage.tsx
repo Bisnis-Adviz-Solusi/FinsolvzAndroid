@@ -673,7 +673,7 @@ const LoginPage: React.FC = () => {
               {t('login.cancel')}
             </Button>
 
-            <Button
+            {/* <Button
               mode="contained"
               buttonColor="#2BA787"
               textColor="#000609"
@@ -689,7 +689,7 @@ const LoginPage: React.FC = () => {
               }}
             >
               {t('login.send')}
-            </Button>
+            </Button> */}
           </View>
         </Modal>
       </Portal>
