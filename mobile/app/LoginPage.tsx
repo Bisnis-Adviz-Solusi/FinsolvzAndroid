@@ -532,7 +532,7 @@ const LoginPage: React.FC = () => {
             }
           />
 
-          <Text
+          {/* <Text
             onPress={() => {
               setOtpEmail(email)
               setModalVisible(true)
@@ -545,7 +545,7 @@ const LoginPage: React.FC = () => {
             }}
           >
             {t('login.forgotPassword')}
-          </Text>
+          </Text> */}
 
           <Pressable
             style={{ width: '100%', alignItems: 'center' }}
